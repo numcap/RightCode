@@ -11,7 +11,8 @@ import SwiftUI
 struct RightCodeApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            HomeView()
+            // TODO: Potentially add environment object
         }
     }
 }
