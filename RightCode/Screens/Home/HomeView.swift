@@ -19,13 +19,15 @@ struct HomeView: View {
             ScrollView {
                 LazyVGrid(columns: columns, alignment: .center) {
                     
-                    DrawingCell(
-                        title: "New",
-                        image: UIImage(systemName: "plus")!,
-                        date: nil
-                    )
-                    .onTapGesture {
+                    Button {
                         addSheetIsPresented = true
+                    } label: {
+                        DrawingCell(
+                            title: "New",
+                            image: UIImage(systemName: "plus")!,
+                            date: nil
+                        )
+                        .tint(.black)
                     }
                     
                     ForEach(drawings) { drawing in
