@@ -18,25 +18,7 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 LazyVGrid(columns: columns, alignment: .center) {
-                    ForEach(drawings) { drawing in
-                        NavigationLink {
-                            Text("asdjkhkahs")
-                        } label: {
-                            DrawingCell(
-                                title: drawing.title,
-                                image: drawing.image,
-                                date: drawing.date
-                            )
-                            .padding(.all, 30)
-                            .border(Color.gray, width: 1)
-                            .onTapGesture {
-                                selectedDrawing = drawing
-                                print(drawing.title)
-                            }
-                            .tint(.black)
-                        }
-                    }
-
+                    
                     DrawingCell(
                         title: "New",
                         image: UIImage(systemName: "plus")!,
@@ -44,6 +26,27 @@ struct HomeView: View {
                     )
                     .onTapGesture {
                         addSheetIsPresented = true
+                    }
+                    
+                    ForEach(drawings) { drawing in
+                        NavigationLink {
+//                            Text("asdjkhkahs")
+                            // TODO: Add Drawing View here
+                        } label: {
+                            DrawingCell(
+                                title: drawing.title,
+                                image: drawing.image,
+                                date: drawing.date
+                            )
+                            .padding(30)
+                            .border(Color.gray, width: 1)
+                            .containerShape(Rectangle())
+                            .tint(.black)
+                        }
+                        .onTapGesture {
+                            selectedDrawing = drawing
+                            print(drawing.title)
+                        }
                     }
                 }
             }
