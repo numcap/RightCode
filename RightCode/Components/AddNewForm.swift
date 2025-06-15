@@ -11,6 +11,7 @@ public struct AddNewForm: View {
     @Binding var addSheetIsPresented: Bool
     @State var title: String = ""
     @State var language: Language = .python
+    @State var viewModel: HomeViewModel
     
     public var body: some View {
         Text("Add a New Note")
@@ -27,21 +28,17 @@ public struct AddNewForm: View {
                 Text("Java").tag(Language.java)
             }
             Button("Create") {
-                print(language)
+                print(language)  // delete
                 addSheetIsPresented = false
+                viewModel.saveDrawing(Drawing(title: title, date: Date(), language: language))
             }
         }
         .formStyle(.automatic)
     }
-    
-    enum Language: String, CaseIterable {
-        case swift
-        case python
-        case javascript
-        case java
-    }
 }
 
-#Preview {
-    AddNewForm(addSheetIsPresented: .constant(true))
-}
+//#Preview {
+//    AddNewForm(
+//        addSheetIsPresented: .constant(true), viewModel:
+//    )
+//}

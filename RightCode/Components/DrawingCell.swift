@@ -39,7 +39,7 @@ struct DrawingCell: View {
 #Preview {
     DrawingCell(
         title: MockData.drawings.first!.title,
-        image: MockData.drawings.first!.image,
-        date: MockData.drawings.first!.date
+        image: UIImage(systemName: "lasso")!,
+        date: MockData.drawings.first!.createdAt
     )
 }

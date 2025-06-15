@@ -8,59 +8,74 @@
 import SwiftUI
 
 struct HomeView: View {
-    @State var drawings: [Drawing] = MockData.aLotOfDrawings
-    @State var selectedDrawing: Drawing?
-    @State var addSheetIsPresented: Bool = false
-    
-    let columns: [GridItem] = Array(repeating: .init(.flexible()), count: 4)
+
+    @StateObject var viewModel = HomeViewModel()
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVGrid(columns: columns, alignment: .center) {
-                    
-                    Button {
-                        addSheetIsPresented = true
-                    } label: {
-                        DrawingCell(
-                            title: "New",
-                            image: UIImage(systemName: "plus")!,
-                            date: nil
-                        )
-                        .tint(.black)
-                    }
-                    
-                    ForEach(drawings) { drawing in
-                        NavigationLink {
-//                            Text("asdjkhkahs")
-                            // TODO: Add Drawing View here
-                        } label: {
-                            DrawingCell(
-                                title: drawing.title,
-                                image: drawing.image,
-                                date: drawing.date
-                            )
-                            .padding(30)
-                            .border(Color.gray, width: 1)
-                            .containerShape(Rectangle())
-                            .tint(.black)
-                        }
-                        .onTapGesture {
-                            selectedDrawing = drawing
-                            print(drawing.title)
-                        }
-                    }
+                LazyVGrid(columns: viewModel.columns, alignment: .center) {
+                    NewDrawingButton(
+                        addSheetIsPresented: $viewModel.addSheetIsPresented
+                    )
+                    DrawingLinks(drawings: $viewModel.drawings, selectedDrawing: $viewModel.selectedDrawing)
                 }
             }
             .navigationTitle("RightCode")
         }
-        .sheet(isPresented: $addSheetIsPresented) {
-            AddNewForm(addSheetIsPresented: $addSheetIsPresented)
+        .sheet(isPresented: $viewModel.addSheetIsPresented) {
+            AddNewForm(addSheetIsPresented: $viewModel.addSheetIsPresented, viewModel: viewModel)
         }
+        .onAppear(perform: viewModel.loadDrawings)
         .padding()
     }
 }
 
 #Preview {
     HomeView()
+}
+
+struct NewDrawingButton: View {
+    @Binding var addSheetIsPresented: Bool
+
+    var body: some View {
+        Button {
+            addSheetIsPresented = true
+        } label: {
+            DrawingCell(
+                title: "New",
+                image: UIImage(systemName: "plus")!,
+                date: nil
+            )
+            .tint(.black)
+        }
+    }
+}
+
+struct DrawingLinks: View {
+    @Binding var drawings: [Drawing]
+    @Binding var selectedDrawing: Drawing?
+
+    var body: some View {
+        ForEach(drawings) { drawing in
+            NavigationLink {
+                // TODO: Add Drawing View here
+            } label: {
+                DrawingCell(
+                    title: drawing.title,
+                    //                    image: drawing.createImage(),
+                    image: UIImage(systemName: "lasso")!,
+                    date: drawing.createdAt
+                )
+                .padding(30)
+                .border(Color.gray, width: 1)
+                .containerShape(Rectangle())
+                .tint(.black)
+            }
+            .onTapGesture {
+                selectedDrawing = drawing
+                print(drawing.title)
+            }
+        }
+    }
 }
