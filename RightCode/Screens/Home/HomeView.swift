@@ -18,7 +18,7 @@ struct HomeView: View {
                     NewDrawingButton(
                         addSheetIsPresented: $viewModel.addSheetIsPresented
                     )
-                    DrawingLinks(drawings: $viewModel.drawings, selectedDrawing: $viewModel.selectedDrawing)
+                    DrawingLinks(drawings: $viewModel.drawings, selectedDrawing: $viewModel.selectedDrawing, viewModel: viewModel)
                 }
             }
             .navigationTitle("RightCode")
@@ -63,28 +63,69 @@ struct NewDrawingButton: View {
 
 struct DrawingLinks: View {
     @Binding var drawings: [Drawing]
-    @Binding var selectedDrawing: Drawing?
-
+    @Binding var selectedDrawing: Drawing
+    @State var viewModel: HomeViewModel
+    @State var renameIsPresented: Bool = false
+    @State var newTitle: String = ""
+    @State var errorAlert: Bool = false
+    
     var body: some View {
         ForEach(drawings) { drawing in
             NavigationLink {
-                // TODO: Add Drawing View here
+                DrawingCanvas(drawing: $selectedDrawing, viewModel: viewModel)
+                    .border(.black)
+                    .navigationTitle(selectedDrawing.title)
+                    .navigationBarTitleDisplayMode(.inline)
             } label: {
                 DrawingCell(
                     title: drawing.title,
-                    //                    image: drawing.createImage(),
-                    image: UIImage(systemName: "lasso")!,
-                    date: drawing.createdAt
+                    image: drawing.createImage(),
+                    date: drawing.createdAt, language: drawing.language.rawValue
                 )
                 .padding(30)
-                .border(Color.gray, width: 1)
-                .containerShape(Rectangle())
-                .tint(.black)
+                .tint(Color(.label))
             }
-            .onTapGesture {
-                selectedDrawing = drawing
-                print(drawing.title)
+            .simultaneousGesture(
+                TapGesture().onEnded({
+                    print(drawing.title)  // delete
+                    selectedDrawing = drawing
+                    print(selectedDrawing) // delete
+                })
+            )
+            .contextMenu {
+                Button("Rename") {
+                    // TODO: Handle rename
+                    renameIsPresented = true
+                    print("Rename tapped")
+                }
+                Button("Duplicate") {
+                    // TODO: Handle duplication
+                    viewModel.duplicateDrawing(drawing)
+                    print("Duplicate tapped")
+                }
+                Button(role: .destructive) {
+                    // TODO: Handle delete
+                    viewModel.deleteDrawing(drawing)
+                    print("Delete tapped")
+                } label: {
+                    Text("Delete")
+                }
+            }
+            .alert("Enter The New Title", isPresented: $renameIsPresented) {
+                TextField("New Title", text: $newTitle)
+                Button("OK") {
+                    let result = viewModel.renameDrawing(newTitle, drawing)
+                    print(result)
+                    errorAlert = result ? false : true
+                    renameIsPresented = false
+                }
+            }
+            .alert("Unable to Rename", isPresented: $errorAlert) {
+                
+            } message: {
+                Text("Please enter a valid title.")
             }
         }
+        
     }
 }
