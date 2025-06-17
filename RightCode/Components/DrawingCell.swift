@@ -8,31 +8,34 @@
 import SwiftUI
 
 struct DrawingCell: View {
+    @Environment(\.colorScheme) var colourScheme
     let title: String
     let image: UIImage
-    let date: Date?
+    let date: Date
+    let language: String
     
     var body: some View {
         VStack {
             Image(uiImage: image)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 100, height: 150)
                 .padding()
-            
+                .background(colourScheme == .dark ? Color.white : Color.gray.opacity(0.2))
+                .clipShape(.buttonBorder)
+            Text(language)
+                .font(.title3)
+            Spacer()
             VStack (alignment: .leading, spacing: 5) {
                 Text(title)
                     .font(.title)
                     .bold()
-                if (date != nil) {
-                    Text(date!.formatted())
+                    Text(date.formatted())
                         .font(.title3)
                         .foregroundStyle(.gray)
-                }
             }
         }
-        .frame(width: 225, height: 300)
-        .border(.black)
+        .frame(width: 250, height: 350)
+//        .border(.black) // delete
     }
 }
 
@@ -40,6 +43,6 @@ struct DrawingCell: View {
     DrawingCell(
         title: MockData.drawings.first!.title,
         image: UIImage(systemName: "lasso")!,
-        date: MockData.drawings.first!.createdAt
+        date: MockData.drawings.first!.createdAt, language: Language.python.rawValue
     )
 }

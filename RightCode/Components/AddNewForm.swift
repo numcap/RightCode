@@ -16,6 +16,7 @@ public struct AddNewForm: View {
     public var body: some View {
         Text("Add a New Note")
             .font(.headline)
+            .padding(.top, 10)
         Form {
             HStack (spacing: 20) {
                 Text("Title")
@@ -30,7 +31,7 @@ public struct AddNewForm: View {
             Button("Create") {
                 print(language)  // delete
                 addSheetIsPresented = false
-                viewModel.saveDrawing(Drawing(title: title, date: Date(), language: language))
+                viewModel.addDrawing(Drawing(title: title, date: Date(), language: language))
             }
         }
         .formStyle(.automatic)

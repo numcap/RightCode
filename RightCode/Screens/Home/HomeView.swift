@@ -27,7 +27,6 @@ struct HomeView: View {
             AddNewForm(addSheetIsPresented: $viewModel.addSheetIsPresented, viewModel: viewModel)
         }
         .onAppear(perform: viewModel.loadDrawings)
-        .padding()
     }
 }
 
@@ -42,12 +41,22 @@ struct NewDrawingButton: View {
         Button {
             addSheetIsPresented = true
         } label: {
-            DrawingCell(
-                title: "New",
-                image: UIImage(systemName: "plus")!,
-                date: nil
-            )
-            .tint(.black)
+            VStack{
+                Image(systemName: "plus.rectangle.portrait")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 100, height: 130)
+                    .padding()
+                
+                VStack (alignment: .leading, spacing: 5) {
+                    Text("new")
+                        .font(.title)
+                        .bold()
+                }
+            }
+            .frame(width: 250, height: 350)
+//            .border(.black)
+            .tint(Color(.label))
         }
     }
 }
