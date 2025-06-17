@@ -14,7 +14,7 @@ import PencilKit
 // 3. Implement undo/redo functionality
 // 4. Sync drawings across views
 struct DrawingCanvas: UIViewRepresentable {
-    @Binding var drawing: Drawing
+    @Binding var note: Note
     @State var viewModel: HomeViewModel
     @State private var toolPicker = PKToolPicker(toolItems: [PKToolPickerInkingItem(type: .pen), PKToolPickerInkingItem(type: .monoline), PKToolPickerScribbleItem(), PKToolPickerEraserItem(type: .vector), PKToolPickerLassoItem(), PKToolPickerRulerItem()])
     
@@ -27,12 +27,12 @@ struct DrawingCanvas: UIViewRepresentable {
         canvasView.drawingPolicy = .pencilOnly
         #endif
         canvasView.backgroundColor = .systemBackground
-        canvasView.drawing = drawing.drawing
+        canvasView.drawing = note.drawing
         canvasView.contentSize = CGSize(
             width: UIScreen.current?.bounds.width ?? 2000,
-            height: drawing.drawing.bounds.height > UIScreen.current?.bounds
+            height: note.drawing.bounds.height > UIScreen.current?.bounds
                 .height ?? 1000
-                ? drawing.drawing.bounds.maxY + 500
+                ? note.drawing.bounds.maxY + 500
                 : UIScreen.current?.bounds.height ?? 1000
         )
 
@@ -43,8 +43,8 @@ struct DrawingCanvas: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: PKCanvasView, context: Context) {
-        if uiView.drawing != drawing.drawing {
-            uiView.drawing = drawing.drawing
+        if uiView.drawing != note.drawing {
+            uiView.drawing = note.drawing
         }
         
         DispatchQueue.main.async {
@@ -70,8 +70,8 @@ struct DrawingCanvas: UIViewRepresentable {
         // This is WHY you'd want a coordinator - to get notified of changes
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
             // Without this, your @State drawing won't update when user draws
-            parent.drawing.drawing = canvasView.drawing
-            parent.viewModel.saveDrawing()
+            parent.note.drawing = canvasView.drawing
+            parent.viewModel.saveNotes()
 
             let drawingBounds = canvasView.drawing.bounds
             let currentHeight = canvasView.contentSize.height

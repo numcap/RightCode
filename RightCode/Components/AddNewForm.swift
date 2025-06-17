@@ -31,7 +31,7 @@ public struct AddNewForm: View {
             Button("Create") {
                 print(language)  // delete
                 addSheetIsPresented = false
-                viewModel.addDrawing(Drawing(title: title, date: Date(), language: language))
+                viewModel.addNote(Note(title: title, date: Date(), language: language))
             }
         }
         .formStyle(.automatic)

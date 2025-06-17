@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct DrawingCell: View {
+struct NoteCell: View {
     @Environment(\.colorScheme) var colourScheme
     let title: String
     let image: UIImage
@@ -40,7 +40,7 @@ struct DrawingCell: View {
 }
 
 #Preview {
-    DrawingCell(
+    NoteCell(
         title: MockData.drawings.first!.title,
         image: UIImage(systemName: "lasso")!,
         date: MockData.drawings.first!.createdAt, language: Language.python.rawValue

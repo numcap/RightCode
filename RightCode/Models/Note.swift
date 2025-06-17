@@ -1,5 +1,5 @@
 //
-//  Drawing.swift
+//  Note.swift
 //  RightCode
 //
 //  Created by Jonathan Ishak on 2025-06-12.
@@ -8,7 +8,7 @@
 import SwiftUI
 import PencilKit
 
-@Observable class Drawing: Identifiable, Codable {
+@Observable class Note: Identifiable, Codable {
     var id = UUID()
     var title: String = ""
     var language: Language = .python
@@ -39,82 +39,82 @@ import PencilKit
 }
 
 struct MockData {
-    static var drawings: [Drawing] = [
-        Drawing(
+    static var drawings: [Note] = [
+        Note(
             title: "hello",
             date: Date(),
             language: .python,
         ),
-        Drawing(
+        Note(
             title: "trash",
             date: Date(),
             language: .java
         ),
-        Drawing(
+        Note(
             title: "folder",
             date: Date(),
             language: .java
         ),
     ]
 
-    static var aLotOfDrawings: [Drawing] =
+    static var aLotOfDrawings: [Note] =
         [
-            Drawing(
+            Note(
                 title: "hello",
                 date: Date(),
                 language: .java
             ),
-            Drawing(
+            Note(
                 title: "trash",
                 date: Date(),
                 language: .java
             ),
-            Drawing(
+            Note(
                 title: "folder",
                 date: Date(),
                 language: .java
             ),
-            Drawing(
+            Note(
                 title: "hello",
                 date: Date(),
                 language: .java
             ),
-            Drawing(
+            Note(
                 title: "trash",
                 date: Date(),
                 language: .java
             ),
-            Drawing(
+            Note(
                 title: "folder",
                 date: Date(),
                 language: .java
             ),
-            Drawing(
+            Note(
                 title: "hello",
                 date: Date(),
                 language: .java
             ),
-            Drawing(
+            Note(
                 title: "trash",
                 date: Date(),
                 language: .java
             ),
-            Drawing(
+            Note(
                 title: "folder",
                 date: Date(),
                 language: .java
             ),
-            Drawing(
+            Note(
                 title: "hello",
                 date: Date(),
                 language: .java
             ),
-            Drawing(
+            Note(
                 title: "trash",
                 date: Date(),
                 language: .java
             ),
-            Drawing(
+            Note(
                 title: "folder",
                 date: Date(),
                 language: .java
