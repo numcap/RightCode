@@ -14,16 +14,28 @@ import PencilKit
 // 3. Implement undo/redo functionality
 // 4. Sync drawings across views
 struct DrawingCanvas: UIViewRepresentable {
-    @Binding var drawing: PKDrawing
+    @Binding var drawing: Drawing
+    @State var viewModel: HomeViewModel
     @State private var toolPicker = PKToolPicker(toolItems: [PKToolPickerInkingItem(type: .pen), PKToolPickerInkingItem(type: .monoline), PKToolPickerScribbleItem(), PKToolPickerEraserItem(type: .vector), PKToolPickerLassoItem(), PKToolPickerRulerItem()])
     
     func makeUIView(context: Context) -> PKCanvasView {
         let canvasView = PKCanvasView()
+        // For Testing
+        #if targetEnvironment(simulator)
+        canvasView.drawingPolicy = .anyInput
+        #else
         canvasView.drawingPolicy = .pencilOnly
-        canvasView.backgroundColor = .gray
-        canvasView.drawing = drawing
-        canvasView.contentSize = CGSize(width: 1000, height: 500)
-        
+        #endif
+        canvasView.backgroundColor = .systemBackground
+        canvasView.drawing = drawing.drawing
+        canvasView.contentSize = CGSize(
+            width: UIScreen.current?.bounds.width ?? 2000,
+            height: drawing.drawing.bounds.height > UIScreen.current?.bounds
+                .height ?? 1000
+                ? drawing.drawing.bounds.maxY + 500
+                : UIScreen.current?.bounds.height ?? 1000
+        )
+
         // Only add delegate if you need to sync changes back
         canvasView.delegate = context.coordinator
         
@@ -31,8 +43,8 @@ struct DrawingCanvas: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: PKCanvasView, context: Context) {
-        if uiView.drawing != drawing {
-            uiView.drawing = drawing
+        if uiView.drawing != drawing.drawing {
+            uiView.drawing = drawing.drawing
         }
         
         DispatchQueue.main.async {
@@ -58,7 +70,24 @@ struct DrawingCanvas: UIViewRepresentable {
         // This is WHY you'd want a coordinator - to get notified of changes
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
             // Without this, your @State drawing won't update when user draws
-            parent.drawing = canvasView.drawing
+            parent.drawing.drawing = canvasView.drawing
+            parent.viewModel.saveDrawing()
+
+            let drawingBounds = canvasView.drawing.bounds
+            let currentHeight = canvasView.contentSize.height
+
+            if drawingBounds.maxY + 400 > currentHeight {
+                let newHeight = drawingBounds.maxY + 500
+                
+                UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut, animations: {
+                    canvasView.contentSize = CGSize(
+                        width: canvasView.contentSize.width,
+                        height: newHeight
+                    )
+                })
+
+            }
+
         }
     }
 }
