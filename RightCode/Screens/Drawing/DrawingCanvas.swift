@@ -15,7 +15,7 @@ import PencilKit
 // 4. Sync drawings across views
 struct DrawingCanvas: UIViewRepresentable {
     @Binding var note: Note
-    @State var viewModel: HomeViewModel
+    @ObservedObject var viewModel: HomeViewModel
     @State private var toolPicker = PKToolPicker(toolItems: [PKToolPickerInkingItem(type: .pen), PKToolPickerInkingItem(type: .monoline), PKToolPickerScribbleItem(), PKToolPickerEraserItem(type: .vector), PKToolPickerLassoItem(), PKToolPickerRulerItem()])
     
     func makeUIView(context: Context) -> PKCanvasView {

@@ -11,7 +11,7 @@ public struct AddNewForm: View {
     @Binding var addSheetIsPresented: Bool
     @State var title: String = ""
     @State var language: Language = .python
-    @State var viewModel: HomeViewModel
+    @ObservedObject var viewModel: HomeViewModel
     
     public var body: some View {
         Text("Add a New Note")

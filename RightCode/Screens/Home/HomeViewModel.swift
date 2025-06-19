@@ -12,8 +12,10 @@ final class HomeViewModel: ObservableObject {
     @Published var notes: [Note] = []
     @Published var selectedNote: Note = Note()
     @Published var addSheetIsPresented: Bool = false
+    @Published var sortingPreferences: SortingPreferences = SortingPreferences(sortingMethod: .date, sortingOrderASC: false)
     
     @AppStorage("localDrawings") var notesData: Data?
+    @AppStorage("sortingPreference") var sortingPreferencesData: Data?
     
     let columns: [GridItem] = Array(repeating: .init(.flexible()), count: 4)
     
@@ -22,25 +24,24 @@ final class HomeViewModel: ObservableObject {
         if let savedData = notesData {
             do {
                 print("trying to load drawings")
-                notes = try JSONDecoder().decode([Note].self, from: savedData).sorted(by: { $0.createdAt > $1.createdAt })
+                notes = try JSONDecoder().decode([Note].self, from: savedData)
                 print("loaded drawings")
             } catch {
                 print("Error loading drawings: \(error)")
             }
         }
-    }
-    
-    func addNote(_ newNote: Note) {
         
-        notes.append(newNote)
-        
-        do {
-            print("trying to save drawings")
-            notesData = try JSONEncoder().encode(notes)
-            loadNotes()
-            print("saved drawings")
-        } catch {
-            print("Error saving drawings: \(error)")
+        if let savedData = sortingPreferencesData {
+            do {
+                print("loading sorting")
+                sortingPreferences = try JSONDecoder().decode(SortingPreferences.self, from: savedData)
+                print(sortingPreferences.sortingMethod)
+                print(sortingPreferences.sortingOrderASC)
+                sort(false)
+            }
+            catch {
+                print("Error loading Sorting Preferences: \(error)")
+            }
         }
     }
     
@@ -55,9 +56,23 @@ final class HomeViewModel: ObservableObject {
                 }
                 print("No drawing to save")
             }
+        } catch {
+
         }
-        catch {
-            
+        
+    }
+    
+    func addNote(_ newNote: Note) {
+        
+        notes.append(newNote)
+        
+        do {
+            print("trying to save drawings")
+            notesData = try JSONEncoder().encode(notes)
+            loadNotes()
+            print("saved drawings")
+        } catch {
+            print("Error saving drawings: \(error)")
         }
     }
     
@@ -104,6 +119,44 @@ final class HomeViewModel: ObservableObject {
         saveNote(selectedNote)
         loadNotes()
         return true
+    }
+    
+    func sort(_ saveSort: Bool) {
+        withAnimation(.easeInOut) {
+            switch sortingPreferences.sortingMethod {
+            case .name:
+                if (sortingPreferences.sortingOrderASC) {
+                    notes = notes.sorted { $0.title > $1.title }
+                } else {
+                    notes = notes.sorted { $0.title < $1.title }
+                }
+            case .date:
+                if (sortingPreferences.sortingOrderASC) {
+                    notes = notes.sorted { $0.createdAt < $1.createdAt }
+                } else {
+                    notes = notes.sorted { $0.createdAt > $1.createdAt }
+                }
+            case .language:
+                if (sortingPreferences.sortingOrderASC) {
+                    notes = notes.sorted { $0.language.rawValue > $1.language.rawValue }
+                }
+                else {
+                    notes = notes.sorted { $0.language.rawValue < $1.language.rawValue }
+                }
+            }
+        }
+        
+//        saveNotes() // maybe keep or delete
+        
+        if saveSort {
+            do {
+                print("saving sorting")
+                sortingPreferencesData = try JSONEncoder().encode(sortingPreferences)
+            }
+            catch {
+                
+            }
+        }
     }
     
 }

@@ -14,6 +14,7 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
+                SortingHeader(viewModel: viewModel)
                 LazyVGrid(columns: viewModel.columns, alignment: .center) {
                     NewNoteButton(
                         addSheetIsPresented: $viewModel.addSheetIsPresented

@@ -6,8 +6,8 @@
 //
 
 enum Language: String, CaseIterable, Codable {
-        case swift
-        case python
-        case javascript
-        case java
+        case swift = "Swift"
+        case python = "Python"
+        case javascript = "JavaScript"
+        case java = "Java"
     }

@@ -10,7 +10,7 @@ import SwiftUI
 struct NoteLinks: View {
     @Binding var notes: [Note]
     @Binding var selectedNote: Note
-    @State var viewModel: HomeViewModel
+    @ObservedObject var viewModel: HomeViewModel
     @State var renameIsPresented: Bool = false
     @State var newTitle: String = ""
     @State var errorAlert: Bool = false
