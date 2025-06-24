@@ -39,7 +39,6 @@ sqs = boto3.client("sqs", region_name=awsRegion)
 
 # Model Setup
 model_path = "nanonets/Nanonets-OCR-s"
-device = ""
 
 
 # pydantic models
@@ -61,6 +60,7 @@ class ExecutionRequest(BaseModel):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    device = ""
     if torch.backends.mps.is_available() :
         device = "mps"
     elif torch.cuda.is_available(): 
@@ -78,6 +78,12 @@ async def lifespan(app: FastAPI):
         model.eval()
         tokenizer = AutoTokenizer.from_pretrained(model_path)
         processor = AutoProcessor.from_pretrained(model_path)
+        
+        app.state.model = model
+        app.state.tokenizer = tokenizer
+        app.state.processor = processor
+        app.state.device = device
+        
         logger.info(f"Model loaded successfully on {device}")
     except Exception as e:
         logger.error(f"Failed to load model: {e}")
@@ -111,8 +117,8 @@ async def health_check():
     return {
         "status": "healthy",
         "timestamp": time.time(),
-        "device": device,
-        "model_loaded": model is not None
+        "device": app.state.device,
+        "model_loaded": app.state.model is not None
     }
 
 # OCR function for scanning images using Nanonets ML model
@@ -150,7 +156,7 @@ async def ocr_page(image_bytes: bytes, model, processor, maxNewTokens=256) -> st
         inputs = inputs.to(device)
         
         with torch.no_grad():
-            output_ids = model.generate(**inputs, max_new_tokens=maxNewTokens, do_sample=False,temperature=0.1, pad_token_id=tokenizer.eos_token_id)
+            output_ids = model.generate(**inputs, max_new_tokens=maxNewTokens, do_sample=False,temperature=0.1, pad_token_id=app.state.tokenizer.eos_token_id)
             
         generate_ids = [output_ids[len(input_ids):] for input_ids, output_ids in zip(inputs.input_ids, output_ids)]
         output_text = processor.batch_decode(generate_ids, skip_special_tokens=True,                            clean_up_tokenization_spaces=True)
@@ -170,7 +176,7 @@ async def ocr_page(image_bytes: bytes, model, processor, maxNewTokens=256) -> st
 async def process_ocr_task(task_id: str, image_bytes: bytes, max_tokens: int):
     try:
         start_time = time.time()
-        result = await ocr_page(image_bytes, model, processor, max_tokens)
+        result = await ocr_page(image_bytes, app.state.model, app.state.processor, max_tokens)
         
         task_data = {
             "status": "completed",
@@ -186,7 +192,7 @@ async def process_ocr_task(task_id: str, image_bytes: bytes, max_tokens: int):
             "status": "failed",
             "error": str(e)
         }
-        redis_client.setex(f"task:{task_id}", 600, json.dumps(task_data))
+        redis_client.setex(f"task: {task_id}", 600, json.dumps(task_data))
         
 @app.post("/ocr", response_model=OCRResponse)
 async def recognize_code(
@@ -201,7 +207,7 @@ async def recognize_code(
         if not drawing.content_type.startswith("image/"):
             raise HTTPException(400, "File must be an image")
         
-        task_id = str(uuid.uuid4)
+        task_id = str(uuid.uuid4())
         
         task_data = {
             "status": "processing",
