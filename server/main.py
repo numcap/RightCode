@@ -153,7 +153,7 @@ async def ocr_page(image_bytes: bytes, model, processor, maxNewTokens=256) -> st
     
         text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
         inputs = processor(text=[text], images=[image], padding=True, return_tensors="pt")
-        inputs = inputs.to(device)
+        inputs = inputs.to(app.state.device)
         
         with torch.no_grad():
             output_ids = model.generate(**inputs, max_new_tokens=maxNewTokens, do_sample=False,temperature=0.1, pad_token_id=app.state.tokenizer.eos_token_id)
