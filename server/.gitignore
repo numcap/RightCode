@@ -33,3 +33,6 @@ coverage/
 *.local
 *.sublime-workspace
 *.sublime-project
+__pycache__/
+.venv/
+extra/
