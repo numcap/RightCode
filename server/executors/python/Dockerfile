@@ -1,5 +1,5 @@
 # executors/python3/Dockerfile
-FROM python:3
+FROM python:3.14-rc-bookworm
 
 WORKDIR /app
 

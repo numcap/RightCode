@@ -2,7 +2,7 @@
 FROM amazoncorretto:17
 
 # Install Python for the executor script
-RUN yum install -y python3 python3-pip \
+RUN yum install -y python3 python3-pip shadow-utils \
     && yum clean all
 
 WORKDIR /app
@@ -15,7 +15,7 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 COPY executor.py .
 
 # Create non-root user
-RUN adduser --uid 1000 --disabled-password --gecos "" executor && chown -R executor:executor /app
+RUN useradd -m -u 1000 executor 8& chown -R executor: executor /app
 USER executor
 
 # Create directories for code execution
