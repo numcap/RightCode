@@ -124,7 +124,7 @@ def process_execution_messages():
     while True:
         try: 
             res = sqs.receive_message(
-                QueueURL=executionQueueURL,
+                QueueUrl=executionQueueURL,
                 MaxNumberOfMessages=1,
                 WaitTimeSeconds=20
             )
