@@ -10,6 +10,8 @@ services:
       - REDIS_URL
       - AWS_REGION
       - EXECUTION_QUEUE_URL
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
     depends_on:
       - redis
     volumes:
@@ -32,6 +34,8 @@ services:
       - REDIS_URL
       - AWS_REGION
       - EXECUTION_QUEUE_URL
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
     depends_on:
       - redis
     # deploy:
@@ -44,6 +48,8 @@ services:
       - REDIS_URL
       - AWS_REGION
       - EXECUTION_QUEUE_URL
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
     depends_on:
       - redis
     # deploy:
@@ -56,19 +62,21 @@ services:
       - REDIS_URL
       - AWS_REGION
       - EXECUTION_QUEUE_URL
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
     depends_on:
       - redis
     # deploy:
     #   replicas: 2
 
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-    depends_on:
-      - ocr-service
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf
+  #   depends_on:
+  #     - ocr-service
 
 volumes:
   redis_data:

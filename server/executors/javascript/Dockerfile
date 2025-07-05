@@ -14,18 +14,17 @@ WORKDIR /app
 COPY requirements.txt .
 RUN python3 -m venv /venv \
     && /venv/bin/pip install --no-cache-dir -r requirements.txt \
-    && in -s /veny/bin/python /us/local/bin/python \
-    && In -s /venv/bin/pip /usr/local/bin/pip
+    && ln -s /venv/bin/python /usr/local/bin/python \
+    && ln -s /venv/bin/pip /usr/local/bin/pip
 
 # Copy executor script
 COPY executor.py .
 
 # Create non-root user
-RUN if ! id -u executor >/dev/null 2>81; then useradd -m executor; fi \
-    && chown -R executor: executor /app
+RUN useradd -m executor && chown -R executor:executor /app
 USER executor
 
 # Create directories for code execution
 RUN mkdir -p /app/temp /app/output
 
-CMD ["python3", "executor.py"]
+CMD ["/venv/bin/python", "executor.py"]

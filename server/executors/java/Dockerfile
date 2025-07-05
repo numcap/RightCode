@@ -15,7 +15,7 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 COPY executor.py .
 
 # Create non-root user
-RUN useradd -m -u 1000 executor 8& chown -R executor: executor /app
+RUN useradd -m -u 1000 executor && chown -R executor:executor /app
 USER executor
 
 # Create directories for code execution
