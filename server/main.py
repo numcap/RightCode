@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from PIL import Image
 from io import BytesIO
-from transformers import AutoProcessor, AutoModelForImageTextToText, AutoTokenizer
+from transformers import AutoProcessor, AutoModel, AutoTokenizer
 from PIL import Image
 import torch
 from io import BytesIO
@@ -70,10 +70,11 @@ async def lifespan(app: FastAPI):
 
     # Loading model
     try: 
-        model = AutoModelForImageTextToText.from_pretrained(
+        model = AutoModel.from_pretrained(
             model_path,
             torch_dtype=torch.float16 if device == "cuda" else torch.float32,
             device_map={"": device},
+            trust_remote_code=True,
         )
         model.eval()
         tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -133,7 +134,7 @@ async def ocr_page(image_bytes: bytes, model, processor, maxNewTokens=256) -> st
         cachedResult = redis_client.get(cacheKey)
         if (cachedResult): 
             logger.info("Cache hit for OCR request")
-            return cachedResult.decode("utf-8")
+            return cachedResult.decode("utf-8") # type: ignore
         
         prompt = """Extract the code in the image exactly as it appears, but return it as raw source code with no extra characters. Do not format the code using markdown (e.g., no triple backticks). Do not include escape characters like \\n or \\t. Output must be plain text exactly how it would appear in a .java file. Remove all surrounding quotes, line breaks, or markup."""
 
@@ -170,7 +171,7 @@ async def ocr_page(image_bytes: bytes, model, processor, maxNewTokens=256) -> st
         return clean_result
     except Exception as e: 
         logger.error(f"OCR processing failed: {e}")
-        return HTTPException(500, f"OCR processing failed: {str(e)}")
+        raise HTTPException(500, f"OCR processing failed: {str(e)}")
 
 
 async def process_ocr_task(task_id: str, image_bytes: bytes, max_tokens: int):
@@ -204,7 +205,7 @@ async def recognize_code(
 ):
     
     try: 
-        if not drawing.content_type.startswith("image/"):
+        if not drawing.content_type or not drawing.content_type.startswith("image/"):
             raise HTTPException(400, "File must be an image")
         
         task_id = str(uuid.uuid4())
@@ -220,7 +221,8 @@ async def recognize_code(
         
         contents = await drawing.read()
         
-        background_tasks.add_task(process_ocr_task(task_id, contents, max_tokens))
+        import asyncio
+        background_tasks.add_task(lambda: asyncio.create_task(process_ocr_task(task_id, contents, max_tokens)))
         
         return OCRResponse(task_id=task_id, status="processing")
         
@@ -236,7 +238,7 @@ async def get_task_status(task_id: str):
     if not task_data: 
         raise HTTPException(404, "Task not found")
     
-    data = json.loads(task_data.decode("utf-8"))
+    data = json.loads(task_data.decode("utf-8")) # type: ignore
     return OCRResponse(task_id=task_id, **data)
 
 
@@ -249,7 +251,7 @@ async def execute_code(request: ExecutionRequest):
         }
         
         response = sqs.send_message(
-            QueueURL=executionQueueURL,
+            QueueUrl=executionQueueURL,
             MessageBody=json.dumps(message)
         )
         
