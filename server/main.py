@@ -72,7 +72,7 @@ async def lifespan(app: FastAPI):
     try: 
         model = AutoModel.from_pretrained(
             model_path,
-            torch_dtype=torch.float16 if device == "cuda" else torch.float32,
+            torch_dtype = torch.float16, # if device in ["cuda", "mps"] else torch.float32,
             device_map={"": device},
             trust_remote_code=True,
         )
@@ -267,4 +267,4 @@ async def execute_code(request: ExecutionRequest):
 
 if __name__ == "__main__" :
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)
