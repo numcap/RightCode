@@ -12,19 +12,36 @@ services:
       - EXECUTION_QUEUE_URL
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
-    depends_on:
-      - redis
+    # depends_on:
+    #   - redis
     volumes:
       - ./:/app
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+      - ~/.cache/huggingface:/root/.cache/huggingface  # maybe add for next build
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 # --reload
 
-  redis:
-    image: redis:7-alpine
+  celery-worker:
+    build: .
+    env_file: .env
+    command: celery -A celery_worker.celeryApp worker --loglevel=info --concurrency=2
+    depends_on:
+      - ocr-service
+    deploy:
+      replicas: 2
+    environment:
+      - REDIS_URL
+      - AWS_REGION
+      - EXECUTION_QUEUE_URL
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+
+  celery-flower:
+    build: .
+    command: celery -A celery_worker.celeryApp flower --port=5555
     ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
+      - "5555:5555"
+    depends_on:
+      - celery-worker
+    env_file: .env
 
   # Code execution workers for different languages
   java-executor:
@@ -36,8 +53,8 @@ services:
       - EXECUTION_QUEUE_URL
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
-    depends_on:
-      - redis
+    # depends_on:
+    #   - redis
     # deploy:
     #   replicas: 2
 
@@ -50,8 +67,8 @@ services:
       - EXECUTION_QUEUE_URL
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
-    depends_on:
-      - redis
+    # depends_on:
+    #   - redis
     # deploy:
     #   replicas: 2
 
@@ -64,8 +81,8 @@ services:
       - EXECUTION_QUEUE_URL
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
-    depends_on:
-      - redis
+    # depends_on:
+    #   - redis
     # deploy:
     #   replicas: 2
 
@@ -78,5 +95,13 @@ services:
   #   depends_on:
   #     - ocr-service
 
-volumes:
-  redis_data:
+  # redis:
+  #   image: redis:7-alpine
+  #   ports:
+  #     - "6379:6379"
+  #   command: redis-server --appendonly yes
+  #   volumes:
+  #     - redis_data:/data
+
+# volumes:
+#   redis_data:
