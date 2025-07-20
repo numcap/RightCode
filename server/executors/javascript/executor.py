@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Env Variables
-redisURL = os.getenv("REDIS_URL")
+redisURL = os.getenv("REDIS_URL_OCR")
 executionQueueURL = os.getenv("EXECUTION_QUEUE_URL")
 awsRegion = os.getenv("AWS_REGION")
 
@@ -67,21 +67,24 @@ class CodeExecutor:
 
 
 def process_execution_messages(): 
+    logger.info("initializing the executor class")
     executor = CodeExecutor()
     
     while True:
         try: 
+            logger.info("about to receive sqs messages")
             res = sqs.receive_message(
                 QueueUrl=executionQueueURL,
                 MaxNumberOfMessages=1,
                 WaitTimeSeconds=20
             )
+            logger.info("received these as messages: \n" + json.dumps(res, indent=2))
             
             messages = res.get("Messages", [])
             
             for message in messages:
                 try:
-                    body = json.loads(message["body"])
+                    body = json.loads(message["Body"])
                     code = body["code"]
                     language: str = body["language"]
                     
@@ -98,7 +101,7 @@ def process_execution_messages():
                     result["language"] = language
                     result['worker'] = "javascript-executor"
                     
-                    result_key = f"execution: {message['MessageId']}"
+                    result_key = f"execution:{message['MessageId']}"
                     redis_client.setex(result_key, 600, json.dumps(result))
                     
                     logger.info(f"Execution completed in {execution_time:.2f}s")
@@ -110,6 +113,19 @@ def process_execution_messages():
                     
                 except Exception as e:
                     logger.error(f"Failed to process message: {e}")
+                    result = {
+                        "success": False,
+                        "output": "There was a problem with our servers or formatting of the code, please try again later",
+                        "errors": str(e),
+                        "stage": "execution",
+                        "exit_code": 500
+                    }
+                    result_key = f"execution:{message['MessageId']}"
+                    redis_client.setex(result_key, 600, json.dumps(result))
+                    sqs.delete_message(
+                        QueueUrl=executionQueueURL,
+                        ReceiptHandle=message['ReceiptHandle']
+                    )
             
                 except KeyboardInterrupt:
                     logger.info("Shutting down executor")

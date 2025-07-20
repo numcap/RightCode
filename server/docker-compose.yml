@@ -48,13 +48,14 @@ services:
     build: ./executors/java
     env_file: .env
     environment:
-      - REDIS_URL
+      - REDIS_URL_OCR
+      - REDIS_URL_CELERY
       - AWS_REGION
       - EXECUTION_QUEUE_URL
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
-    # depends_on:
-    #   - redis
+    depends_on:
+      - redis
     # deploy:
     #   replicas: 2
 
@@ -62,13 +63,14 @@ services:
     build: ./executors/python
     env_file: .env
     environment:
-      - REDIS_URL
+      - REDIS_URL_OCR
+      - REDIS_URL_CELERY
       - AWS_REGION
       - EXECUTION_QUEUE_URL
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
-    # depends_on:
-    #   - redis
+    depends_on:
+      - redis
     # deploy:
     #   replicas: 2
 
@@ -76,13 +78,14 @@ services:
     build: ./executors/javascript
     env_file: .env
     environment:
-      - REDIS_URL
+      - REDIS_URL_OCR
+      - REDIS_URL_CELERY
       - AWS_REGION
       - EXECUTION_QUEUE_URL
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
-    # depends_on:
-    #   - redis
+    depends_on:
+      - redis
     # deploy:
     #   replicas: 2
 
@@ -95,13 +98,13 @@ services:
   #   depends_on:
   #     - ocr-service
 
-  # redis:
-  #   image: redis:7-alpine
-  #   ports:
-  #     - "6379:6379"
-  #   command: redis-server --appendonly yes
-  #   volumes:
-  #     - redis_data:/data
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
 
 # volumes:
 #   redis_data:
