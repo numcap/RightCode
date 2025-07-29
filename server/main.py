@@ -1,11 +1,11 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from PIL import Image
 from io import BytesIO
-from transformers import AutoProcessor, AutoModel, AutoTokenizer
-from PIL import Image
+from transformers import AutoProcessor, AutoModelForImageTextToText, AutoTokenizer, AutoConfig
+from accelerate import init_empty_weights, load_checkpoint_and_dispatch
+from huggingface_hub import snapshot_download
 import torch
 from io import BytesIO
 from typing import Annotated, Optional
@@ -14,11 +14,11 @@ from dotenv import load_dotenv
 from os import getenv
 import redis
 from celery import Celery
+from celery.signals import worker_process_init
 import json
 import boto3
 from botocore.exceptions import ClientError
 import time
-import uuid
 from contextlib import asynccontextmanager
 
 # Configure logging
@@ -27,13 +27,14 @@ logger = logging.getLogger(__name__)
 
 # Env Variables
 load_dotenv()
-redisURL = getenv("REDIS_URL")
+redisOcrURL = getenv("REDIS_URL_OCR")
+redisCeleryURL = getenv("REDIS_URL_CELERY")
 executionQueueURL = getenv("EXECUTION_QUEUE_URL")
 awsRegion = getenv("AWS_REGION")
 
 # initializing services
-redis_client = redis.from_url(redisURL)
-celeryApp = Celery('ocr_service', broker=redisURL, backend=redisURL, include=['main'])
+redis_client = redis.from_url(redisOcrURL)
+celeryApp = Celery('ocr_service', broker=redisCeleryURL, backend=redisCeleryURL, include=['main'])
 celeryApp.conf.update(
     task_serializer='json',
     accept_content=['json'],
@@ -80,38 +81,71 @@ device = None
 def load_model():
     global model, tokenizer, processor, device
     
-    if model is not None:
-        return model, tokenizer, processor, device
-    
-    device = ""
-    if torch.backends.mps.is_available() :
+    device = "cpu"
+    if torch.backends.mps.is_available():
         device = "mps"
     elif torch.cuda.is_available(): 
         device = "cuda"
+
+    # Configure precision and quantization based on device
+    if device == "cuda":
+        try:
+            from transformers.utils.quantization_config import BitsAndBytesConfig
+            bnb_config = BitsAndBytesConfig(load_in_8bit=True)
+        except ImportError:
+            logger.warning("bitsandbytes not available for 8-bit quantization, proceeding without it.")
+            bnb_config = None
+        torch_dtype = torch.float16
+        device_map = "auto"
+    elif device == "mps":
+        bnb_config = None
+        torch_dtype = torch.float32
+        device_map = {"": "mps"}
     else:
-        device = "cpu"
+        bnb_config = None
+        torch_dtype = torch.float32
+        device_map = {"": "cpu"}
 
     # Loading model
+    logger.info(f"Loading model using {device}")
     try: 
-        logger.info(f"Loading model using {device}")
-        model = AutoModel.from_pretrained(
+        # local_model_dir = snapshot_download(model_path, cache_dir="/tmp/hf_cache")
+        model = AutoModelForImageTextToText.from_pretrained(
             model_path,
-            torch_dtype = torch.float16, # if device in ["cuda", "mps"] else torch.float32,
-            device_map={"": device},
+            device_map=device_map,
+            offload_folder="/tmp/offload",
+            offload_state_dict=True,
+            torch_dtype=torch_dtype,        # or float32 if you must
+            low_cpu_mem_usage=True,
             trust_remote_code=True,
+            quantization_config=bnb_config,
+            # torch_dtype=torch.float16, #torch_dtype,
+            # cache_dir="/tmp/hf_cache",
+            # use_cache=False,
+            # offload_folder="/tmp/offload",
         )
+        # model = model.half()
+        # model = torch.quantization.quantize_dynamic(
+        #     model,
+        #     {torch.nn.Linear},
+        #     dtype=torch.qint8
+        # )
+        
         model.eval()
-        tokenizer = AutoTokenizer.from_pretrained(model_path)
-        processor = AutoProcessor.from_pretrained(model_path)
+        tokenizer = AutoTokenizer.from_pretrained(model_path, cache_dir="/tmp/hf_cache")
+        processor = AutoProcessor.from_pretrained(model_path, cache_dir="/tmp/hf_cache")
         
         logger.info(f"Model loaded successfully on {device}")
-        return model, tokenizer, processor, device
     
     except Exception as e:
         logger.error(f"Failed to load model: {e}")
         raise
 
 # ======================== Celery Tasks ========================
+
+@worker_process_init.connect
+def load_model_on_worker_start(**kwargs):
+    load_model()
 
 # OCR function for scanning images using Nanonets ML model
 @celeryApp.task(bind=True, name="ocr_service.process_ocr")
@@ -121,8 +155,6 @@ def process_ocr_task(self, image_bytes: bytes, maxNewTokens=256):
     """
     try: 
         self.update_state(state="PROGRESS", meta={'status': 'Loading model...'})
-        
-        model, tokenizer, processor, device = load_model()
         
         # Decode base64 image
         import base64
@@ -170,6 +202,10 @@ def process_ocr_task(self, image_bytes: bytes, maxNewTokens=256):
         if tokenizer is None:
             logger.error("tokenizer is not defined")
             raise RuntimeError("tokenizer is not defined")
+        
+        if model is None:
+            logger.error("model is not defined")
+            raise RuntimeError("model is not defined")
         
         with torch.no_grad():
             output_ids = model.generate(
@@ -275,8 +311,6 @@ async def health_check():
         worker_count = 0
         logger.warning(f"Could not check worker status: {e}")
 
-    model, tokenizer, processor, device = load_model()
-    
     return {
         "status": "healthy",
         "timestamp": time.time(),
@@ -324,7 +358,7 @@ async def recognize_code(
 @app.get("/task/{task_id}", response_model=OCRResponse)
 def get_task_status(task_id: str):
     try:
-        task_result = celeryApp.AsyncResult(task_id, backend=redisURL)
+        task_result = celeryApp.AsyncResult(task_id)
         
         if task_result.state == 'PENDING':
                 return OCRResponse(
