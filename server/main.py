@@ -4,8 +4,6 @@ from pydantic import BaseModel
 from PIL import Image
 from io import BytesIO
 from transformers import AutoProcessor, AutoModelForImageTextToText, AutoTokenizer, AutoConfig
-from accelerate import init_empty_weights, load_checkpoint_and_dispatch
-from huggingface_hub import snapshot_download
 import torch
 from io import BytesIO
 from typing import Annotated, Optional
