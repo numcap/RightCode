@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from PIL import Image
 from io import BytesIO
-from transformers import AutoProcessor, AutoModelForImageTextToText, AutoTokenizer, AutoConfig
+from transformers import AutoProcessor, AutoModelForImageTextToText, AutoTokenizer
 import torch
 from io import BytesIO
 from typing import Annotated, Optional
@@ -87,12 +87,6 @@ def load_model():
 
     # Configure precision and quantization based on device
     if device == "cuda":
-        try:
-            from transformers.utils.quantization_config import BitsAndBytesConfig
-            bnb_config = BitsAndBytesConfig(load_in_8bit=True)
-        except ImportError:
-            logger.warning("bitsandbytes not available for 8-bit quantization, proceeding without it.")
-            bnb_config = None
         torch_dtype = torch.float16
         device_map = "auto"
     elif device == "mps":
