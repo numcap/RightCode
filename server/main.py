@@ -1,5 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+import asyncio
 from pydantic import BaseModel
 from PIL import Image
 from io import BytesIO
@@ -386,6 +388,29 @@ def get_task_status(task_id: str):
     except Exception as e:
         logger.error(f"Error getting task status: {e}")
         raise HTTPException(status_code=500, detail="Error retrieving task status")
+    
+@app.get("/task/stream/{task_id}")
+async def get_streamed_task_status(task_id: str, wait: int = 35):
+    async def eventgen():
+        deadline = asyncio.get_event_loop().time() + wait
+        while asyncio.get_event_loop().time() < deadline:
+            r = celeryApp.AsyncResult(task_id)
+            state = r.state
+            if state == "PROGRESS":
+                yield f"data:{json.dumps({'status': 'processing', 'info': r.info})}"
+            elif state == "SUCCESS":
+                yield f"data:{json.dumps({'status': 'completed', 'info': r.result})}"
+                break
+            elif state == "FAILED":
+                err = r.result if isinstance(r.result, str) else str(r.result)
+                yield f"data:{json.dumps({'status': 'failed', 'error': err})}"
+                break
+            else:
+                yield f"data:{json.dumps({'status': state.lower()})}"
+            await asyncio.sleep(0.8)
+        else:
+            yield f"data: {json.dumps({'status':'timeout'})}"
+    return StreamingResponse(content=eventgen(), media_type="text/event-stream")
 
 
 @app.post("/execute")
