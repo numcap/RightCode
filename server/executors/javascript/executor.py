@@ -101,7 +101,7 @@ def process_execution_messages():
                     result["language"] = language
                     result['worker'] = "javascript-executor"
                     
-                    result_key = f"execution:{message['MessageId']}"
+                    result_key = f"execution:{body['task_id']}"
                     redis_client.setex(result_key, 600, json.dumps(result))
                     
                     logger.info(f"Execution completed in {execution_time:.2f}s")
