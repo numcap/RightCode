@@ -460,6 +460,24 @@ async def get_execution_status(task_id: str):
         logger.error(f"Error getting execution status: {e}")
         raise HTTPException(status_code=500, detail="Error retrieving execution status")
 
+@app.get("/execute/status/stream/{task_id}")
+async def get_streamed_execution_status(task_id: str, wait: int = 35):
+    async def eventgen():
+        deadline = asyncio.get_event_loop().time() + wait
+        while asyncio.get_event_loop().time() < deadline:
+            try:
+                result = redis_client.get(f"execution:{task_id}")
+                if result:
+                    yield f"data:{json.dumps({'status': 'success', 'task_id': task_id, 'result': result})}"
+                    break
+                else:
+                    yield f"data: {json.dumps({'status': 'pending', 'task_id': task_id, 'result': None})}"
+            except:
+                yield f"data: {json.dumps({'status': 'pending in except', 'task_id': task_id, 'result': None})}"
+            await asyncio.sleep(0.8)
+        else:
+            yield f"data: {json.dumps({'status': 'timed out', 'task_id': task_id, 'result': None})}"
+    return StreamingResponse(content=eventgen(), media_type="text/event-stream")
 
 # Add endpoint to get all active tasks
 @app.get("/tasks/active")
