@@ -401,7 +401,7 @@ async def get_streamed_task_status(task_id: str, wait: int = 35):
             elif state == "SUCCESS":
                 yield f"data:{json.dumps({'status': 'completed', 'info': r.result})}"
                 break
-            elif state == "FAILED":
+            elif state == "FAILURE":
                 err = r.result if isinstance(r.result, str) else str(r.result)
                 yield f"data:{json.dumps({'status': 'failed', 'error': err})}"
                 break
@@ -466,14 +466,21 @@ async def get_streamed_execution_status(task_id: str, wait: int = 35):
         deadline = asyncio.get_event_loop().time() + wait
         while asyncio.get_event_loop().time() < deadline:
             try:
-                result = redis_client.get(f"execution:{task_id}")
-                if result:
-                    yield f"data:{json.dumps({'status': 'success', 'task_id': task_id, 'result': result})}"
+                raw_result = redis_client.get(f"execution:{task_id}")
+                # print(raw_result)
+                if raw_result:
+                    try:
+                        parsed = json.loads(raw_result.decode("utf-8")) # type:ignore
+                    except Exception:
+                        parsed = raw_result.decode("utf-8") # type:ignore
+                    payload = {'status': 'success', 'task_id': task_id, 'result': parsed}
+                    yield f"data:{json.dumps(payload)}"
                     break
                 else:
                     yield f"data: {json.dumps({'status': 'pending', 'task_id': task_id, 'result': None})}"
-            except:
-                yield f"data: {json.dumps({'status': 'pending in except', 'task_id': task_id, 'result': None})}"
+            except Exception as e:
+                logger.exception(f"Error reading execution status for {task_id}: {e}")
+                yield f"data: {json.dumps({'status': 'pending in except (error occurred)', 'task_id': task_id, 'result': None})}"
             await asyncio.sleep(0.8)
         else:
             yield f"data: {json.dumps({'status': 'timed out', 'task_id': task_id, 'result': None})}"
