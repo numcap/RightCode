@@ -264,9 +264,20 @@ def execute_code_task(self, code: str, language: str):
 
         message = {"code": code, "language": language, "task_id": self.request.id}
 
-        def sendMessage(url: str | None, message: dict[str, str]):
-            if url is None:
-                raise ValueError("Queue URL cannot be None")
+        if (
+            not executionQueuePythonURL
+            or not executionQueueJavaScriptURL
+            or not executionQueueJavaURL
+        ):
+            logger.error(
+                "EXECUTION URLs Cannot be None, there is a problem with env vars"
+            )
+            return {
+                "status": "FAILURE",
+                "error": "EXECUTION URLs Cannot be None, there is a problem with env vars",
+            }
+
+        def sendMessage(url: str, message: dict[str, str]):
             sqs.send_message(
                 QueueUrl=url,
                 MessageBody=json.dumps(message),

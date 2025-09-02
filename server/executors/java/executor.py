@@ -124,6 +124,9 @@ def process_execution_messages():
 
     while True:
         try: 
+            if not executionQueueURL:
+                logger.error("Execution URL cannot be None")
+                break
             logger.info("about to receive sqs messages")
             res = sqs.receive_message(
                 QueueUrl=executionQueueURL,
