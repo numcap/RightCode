@@ -265,6 +265,8 @@ def execute_code_task(self, code: str, language: str):
         message = {"code": code, "language": language, "task_id": self.request.id}
 
         def sendMessage(url: str | None, message: dict[str, str]):
+            if url is None:
+                raise ValueError("Queue URL cannot be None")
             sqs.send_message(
                 QueueUrl=url,
                 MessageBody=json.dumps(message),
@@ -501,7 +503,7 @@ async def get_streamed_execution_status(task_id: str, wait: int = 35):
                 if raw_result:
                     try:
                         parsed = json.loads(raw_result.decode("utf-8"))  # type:ignore
-                    except Exception:
+                    except:
                         parsed = raw_result.decode("utf-8")  # type:ignore
                     payload = {
                         "status": "success",
