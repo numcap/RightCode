@@ -441,19 +441,19 @@ async def get_streamed_task_status(task_id: str, wait: int = 35):
             r = celeryApp.AsyncResult(task_id)
             state = r.state
             if state == "PROGRESS":
-                yield f"data:{json.dumps({'status': 'processing', 'task_id': task_id, 'result': r.info})}"
+                yield f"data:{json.dumps({'status': 'processing', 'task_id': task_id, 'result': r.info})}\n\n"
             elif state == "SUCCESS":
-                yield f"data:{json.dumps({'status': 'completed', 'task_id': task_id, 'result': r.result})}"
+                yield f"data:{json.dumps({'status': 'completed', 'task_id': task_id, 'result': r.result})}\n\n"
                 break
             elif state == "FAILURE":
                 err = r.result if isinstance(r.result, str) else str(r.result)
-                yield f"data:{json.dumps({'status': 'failed', 'task_id': task_id,  'result': err})}"
+                yield f"data:{json.dumps({'status': 'failed', 'task_id': task_id,  'result': err})}\n\n"
                 break
             else:
-                yield f"data:{json.dumps({'status': state.lower(), 'task_id': task_id, 'result': None})}"
+                yield f"data:{json.dumps({'status': state.lower(), 'task_id': task_id, 'result': None})}\n\n"
             await asyncio.sleep(0.8)
         else:
-            yield f"data: {json.dumps({'status':'timeout'})}"
+            yield f"data:{json.dumps({'status':'timeout', 'task_id': task_id, 'result': None})}\n\n"
 
     return StreamingResponse(content=eventgen(), media_type="text/event-stream")
 
@@ -500,7 +500,13 @@ async def get_execution_status(task_id: str):
 
     except Exception as e:
         logger.error(f"Error getting execution status: {e}")
-        raise HTTPException(status_code=500, detail="Error retrieving execution status")
+        payload = {
+                "status": "error",
+                "task_id": task_id,
+                "result": e,
+            }
+
+        return f"data:{json.dumps(payload)}"
 
 
 @app.get("/execute/stream/{task_id}")
@@ -521,16 +527,16 @@ async def get_streamed_execution_status(task_id: str, wait: int = 35):
                         "task_id": task_id,
                         "result": parsed,
                     }
-                    yield f"data:{json.dumps(payload)}"
+                    yield f"data:{json.dumps(payload)}\n\n"
                     break
                 else:
-                    yield f"data: {json.dumps({'status': 'pending', 'task_id': task_id, 'result': None})}"
+                    yield f"data: {json.dumps({'status': 'pending', 'task_id': task_id, 'result': None})}\n\n"
             except Exception as e:
                 logger.exception(f"Error reading execution status for {task_id}: {e}")
-                yield f"data: {json.dumps({'status': 'pending in except (error occurred)', 'task_id': task_id, 'result': None})}"
+                yield f"data: {json.dumps({'status': 'pending in except (error occurred)', 'task_id': task_id, 'result': None})}\n\n"
             await asyncio.sleep(0.8)
         else:
-            yield f"data: {json.dumps({'status': 'timed out', 'task_id': task_id, 'result': None})}"
+            yield f"data: {json.dumps({'status': 'timed out', 'task_id': task_id, 'result': None})}\n\n"
 
     return StreamingResponse(content=eventgen(), media_type="text/event-stream")
 
