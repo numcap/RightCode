@@ -441,16 +441,16 @@ async def get_streamed_task_status(task_id: str, wait: int = 35):
             r = celeryApp.AsyncResult(task_id)
             state = r.state
             if state == "PROGRESS":
-                yield f"data:{json.dumps({'status': 'processing', 'info': r.info})}"
+                yield f"data:{json.dumps({'status': 'processing', 'task_id': task_id, 'result': r.info})}"
             elif state == "SUCCESS":
-                yield f"data:{json.dumps({'status': 'completed', 'info': r.result})}"
+                yield f"data:{json.dumps({'status': 'completed', 'task_id': task_id, 'result': r.result})}"
                 break
             elif state == "FAILURE":
                 err = r.result if isinstance(r.result, str) else str(r.result)
-                yield f"data:{json.dumps({'status': 'failed', 'error': err})}"
+                yield f"data:{json.dumps({'status': 'failed', 'task_id': task_id,  'result': err})}"
                 break
             else:
-                yield f"data:{json.dumps({'status': state.lower()})}"
+                yield f"data:{json.dumps({'status': state.lower(), 'task_id': task_id, 'result': None})}"
             await asyncio.sleep(0.8)
         else:
             yield f"data: {json.dumps({'status':'timeout'})}"
