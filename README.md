@@ -1,4 +1,7 @@
 # RightCode
+**An iPadOS app for writing, running, and verifying handwritten code using Apple Pencil.**
+
+---
 
 ## Overview
 
@@ -12,16 +15,23 @@ The concept behind RightCode emerged from personal frustration experienced durin
 
 * **Natural Handwriting Interface:** Utilizing SwiftUI and PencilKit, RightCode ensures a fluid, natural, and responsive handwriting experience.
 * **Real-Time Code Execution:** Integrated backend services immediately run handwritten code snippets, providing instant verification of accuracy.
-* **Advanced Handwriting Recognition:** Powered by Hugging Face's advanced machine learning model, "nanonets-OCR-s," RightCode delivers highly accurate handwritten text recognition and transcription.
+* **Advanced Handwriting Recognition:** Powered by Hugging Face's advanced machine learning model, "nanonets-OCR-s," uses "QWEN-2.5-VL" delivers highly accurate handwritten text recognition and transcription.
 * **Efficient Asynchronous Processing:** Leveraging Redis and Celery, the app handles tasks efficiently, ensuring scalability and high performance.
 * **Robust Cloud Infrastructure:** Built with Docker containers and scalable backend services, RightCode is optimized for reliable and fast code execution.
 
-## Technical Details
+## Tech Stack
 
-* **Frontend Technologies:** SwiftUI, PencilKit
-* **Backend Technologies:** FastAPI, Python
-* **Machine Learning Framework:** Hugging Face's Nanonets-OCR-s
-* **Infrastructure & Deployment:** Docker, Redis, Celery
+| Component          | Technology                         |
+|--------------------|------------------------------------|
+| Frontend (iPadOS)  | SwiftUI, PencilKit                 |
+| Backend API        | Python, FastAPI                    |
+| OCR / ML Model     | Hugging Face, nanonets-OCR-s       |
+| Task Queue         | Celery, AWS SQS                    |
+| Message Broker     | Redis                              |
+| Result Storage     | Redis                              |
+| Containerization   | Docker                             |
+
+---
 
 ## Use Cases
 
@@ -29,3 +39,5 @@ The concept behind RightCode emerged from personal frustration experienced durin
 * **Algorithm Prototyping:** Developers quickly prototype and test algorithms using a comfortable handwriting approach.
 * **Educational Tools:** Ideal for instructors teaching coding, allowing real-time demonstration and verification of code.
 * **Personal Coding Practice:** Anyone who prefers writing code by hand can now execute and verify their code instantly.
+* **Interview Prep** – Work through problems in a natural handwriting style.  
+
