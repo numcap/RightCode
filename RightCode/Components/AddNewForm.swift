@@ -38,8 +38,8 @@ public struct AddNewForm: View {
     }
 }
 
-//#Preview {
-//    AddNewForm(
-//        addSheetIsPresented: .constant(true), viewModel:
-//    )
-//}
+#Preview {
+    AddNewForm(
+        addSheetIsPresented: .constant(true), viewModel: HomeViewModel()
+    )
+}

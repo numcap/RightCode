@@ -14,28 +14,37 @@ struct NoteLinks: View {
     @State var renameIsPresented: Bool = false
     @State var newTitle: String = ""
     @State var errorAlert: Bool = false
-    
+
     var body: some View {
         ForEach(notes) { note in
             NavigationLink {
-                DrawingCanvas(note: $selectedNote, viewModel: viewModel)
+                DrawingCanvas(note: $viewModel.selectedNote, viewModel: viewModel)
                     .border(.black)
-                    .navigationTitle(selectedNote.title)
+                    .navigationTitle(viewModel.selectedNote.title)
                     .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        NoteToolbar(viewModel: viewModel)
+                    }
+                    .overlay {
+                        if viewModel.isLoading {
+                            LoadingView(text: "Scanning File")
+                        }
+                    }
             } label: {
                 NoteCell(
                     title: note.title,
-                    image: note.createImage(),
-                    date: note.createdAt, language: note.language.rawValue
+                    image: note.drawing.image(from: CGRect(x:0, y:0, width: 1100, height: 1000), scale: 1),
+                    date: note.createdAt,
+                    language: note.language.rawValue
                 )
-                .padding(30)
+                .padding(15)
                 .tint(Color(.label))
             }
             .simultaneousGesture(
                 TapGesture().onEnded({
                     print(note.title)  // delete
-                    selectedNote = note
-                    print(selectedNote) // delete
+                    viewModel.selectedNote = note
+                    print(viewModel.selectedNote)  // delete
                 })
             )
             .contextMenu {
@@ -67,11 +76,12 @@ struct NoteLinks: View {
                 }
             }
             .alert("Unable to Rename", isPresented: $errorAlert) {
-                
+
             } message: {
                 Text("Please enter a valid title.")
             }
         }
-        
+
     }
 }
+

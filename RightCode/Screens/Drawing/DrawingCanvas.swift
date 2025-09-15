@@ -5,8 +5,8 @@
 //  Created by Jonathan Ishak on 2025-05-19.
 //
 
-import SwiftUI
 import PencilKit
+import SwiftUI
 
 // Version WITH coordinator - only needed if you want to:
 // 1. Save drawing changes back to your @State
@@ -16,15 +16,20 @@ import PencilKit
 struct DrawingCanvas: UIViewRepresentable {
     @Binding var note: Note
     @ObservedObject var viewModel: HomeViewModel
-    @State private var toolPicker = PKToolPicker(toolItems: [PKToolPickerInkingItem(type: .pen), PKToolPickerInkingItem(type: .monoline), PKToolPickerScribbleItem(), PKToolPickerEraserItem(type: .vector), PKToolPickerLassoItem(), PKToolPickerRulerItem()])
-    
+    @State private var toolPicker = PKToolPicker(toolItems: [
+        PKToolPickerInkingItem(type: .pen),
+        PKToolPickerInkingItem(type: .monoline), PKToolPickerScribbleItem(),
+        PKToolPickerEraserItem(type: .vector), PKToolPickerLassoItem(),
+        PKToolPickerRulerItem(),
+    ])
+
     func makeUIView(context: Context) -> PKCanvasView {
         let canvasView = PKCanvasView()
         // For Testing
         #if targetEnvironment(simulator)
-        canvasView.drawingPolicy = .anyInput
+            canvasView.drawingPolicy = .anyInput
         #else
-        canvasView.drawingPolicy = .pencilOnly
+            canvasView.drawingPolicy = .pencilOnly
         #endif
         canvasView.backgroundColor = .systemBackground
         canvasView.drawing = note.drawing
@@ -38,16 +43,19 @@ struct DrawingCanvas: UIViewRepresentable {
 
         // Only add delegate if you need to sync changes back
         canvasView.delegate = context.coordinator
-        
+
         return canvasView
     }
-    
+
     func updateUIView(_ uiView: PKCanvasView, context: Context) {
         if uiView.drawing != note.drawing {
             uiView.drawing = note.drawing
         }
-        
+
         DispatchQueue.main.async {
+            if viewModel.isLoading {
+                toolPicker.setVisible(false, forFirstResponder: uiView)
+            }
             if uiView.window != nil && !toolPicker.isVisible {
                 toolPicker.setVisible(true, forFirstResponder: uiView)
                 toolPicker.addObserver(uiView)
@@ -55,22 +63,26 @@ struct DrawingCanvas: UIViewRepresentable {
             }
         }
     }
-    
+
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
-    
+
     class Coordinator: NSObject, PKCanvasViewDelegate {
         let parent: DrawingCanvas
-        
+
         init(_ parent: DrawingCanvas) {
             self.parent = parent
         }
-        
+
         // This is WHY you'd want a coordinator - to get notified of changes
         func canvasViewDrawingDidChange(_ canvasView: PKCanvasView) {
             // Without this, your @State drawing won't update when user draws
             parent.note.drawing = canvasView.drawing
+            parent.note.hasBeenScanned = false
+            parent.note.mostRecentOCRTaskId = ""
+            parent.note.mostRecentExeTaskId = ""
+            parent.note.scannedCode = ""
             parent.viewModel.saveNotes()
 
             let drawingBounds = canvasView.drawing.bounds
@@ -78,20 +90,24 @@ struct DrawingCanvas: UIViewRepresentable {
 
             if drawingBounds.maxY + 400 > currentHeight {
                 let newHeight = drawingBounds.maxY + 500
-                
-                UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut, animations: {
-                    canvasView.contentSize = CGSize(
-                        width: canvasView.contentSize.width,
-                        height: newHeight
-                    )
-                })
+
+                UIView.animate(
+                    withDuration: 0.25,
+                    delay: 0,
+                    options: .curveEaseInOut,
+                    animations: {
+                        canvasView.contentSize = CGSize(
+                            width: canvasView.contentSize.width,
+                            height: newHeight
+                        )
+                    }
+                )
 
             }
 
         }
     }
 }
-
 
 // Replace 'let window  = UIApplication.shared.windows.first' with 'UIApplication.shared.windows.first != nil'
 // 'windows' was deprecated in iOS 15.0: Use UIWindowScene.windows on a relevant window scene instead

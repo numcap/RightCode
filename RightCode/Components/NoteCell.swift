@@ -24,7 +24,6 @@ struct NoteCell: View {
                 .clipShape(.buttonBorder)
             Text(language)
                 .font(.title3)
-            Spacer()
             VStack (alignment: .leading, spacing: 5) {
                 Text(title)
                     .font(.title)

@@ -10,9 +10,22 @@
 		5D8A8C9B2DD52C2A00681E46 /* RightCode.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RightCode.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		5DFA381C2E691126003D1F74 /* Exceptions for "RightCode" folder in "RightCode" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 5D8A8C9A2DD52C2A00681E46 /* RightCode */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		5D8A8C9D2DD52C2A00681E46 /* RightCode */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5DFA381C2E691126003D1F74 /* Exceptions for "RightCode" folder in "RightCode" target */,
+			);
 			path = RightCode;
 			sourceTree = "<group>";
 		};
@@ -256,6 +269,7 @@
 				DEVELOPMENT_TEAM = 56N59624ZW;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RightCode/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -290,6 +304,7 @@
 				DEVELOPMENT_TEAM = 56N59624ZW;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RightCode/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.education";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
