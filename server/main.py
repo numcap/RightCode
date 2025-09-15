@@ -170,7 +170,9 @@ def process_ocr_task(self, image_bytes: bytes, maxNewTokens=256):
 
         start_time = time.time()
 
-        cacheKey = f"ocr:{self.request.id}"
+        from hashlib import md5
+
+        cacheKey = f"ocr:{md5(image_bytes).hexdigest()}"
         # checks if image_bytes is already in the redis cache as a key
         cachedResult = redis_client.get(cacheKey)
         if cachedResult:
