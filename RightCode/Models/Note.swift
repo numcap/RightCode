@@ -5,8 +5,8 @@
 //  Created by Jonathan Ishak on 2025-06-12.
 //
 
-import SwiftUI
 import PencilKit
+import SwiftUI
 
 @Observable class Note: Identifiable, Codable {
     var id = UUID()
@@ -15,23 +15,31 @@ import PencilKit
     var createdAt: Date = Date()
     var drawing: PKDrawing = PKDrawing()
     
+    var mostRecentOCRTaskId = ""
+    var mostRecentExeTaskId = ""
+    var scannedCode: String = ""
+    var hasBeenScanned: Bool = false
+    var codeResult: executionResult?
+
     init(id: UUID = UUID(), title: String, date: Date, language: Language) {
         self.id = id
         self.title = title
         self.createdAt = date
         self.language = language
     }
-    
-    init(id: UUID = UUID(), title: String, date: Date, language: Language, drawing: PKDrawing) {
+
+    init(
+        id: UUID = UUID(),
+        title: String,
+        date: Date,
+        language: Language,
+        drawing: PKDrawing
+    ) {
         self.id = id
         self.title = title
         self.createdAt = date
         self.language = language
         self.drawing = drawing
-    }
-    
-    func createImage() -> UIImage {
-        return drawing.image(from: CGRect(x: 0, y: 0, width: 1000, height: 1050), scale: 3)
     }
     
     init() {

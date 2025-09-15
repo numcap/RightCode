@@ -8,11 +8,16 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 final class HomeViewModel: ObservableObject {
     @Published var notes: [Note] = []
     @Published var selectedNote: Note = Note()
     @Published var addSheetIsPresented: Bool = false
+    @Published var isLoading: Bool = false
+    @Published var editorIsPresented: Bool = false
+    @Published var codePopupIsPresented: Bool = false
     @Published var sortingPreferences: SortingPreferences = SortingPreferences(sortingMethod: .date, sortingOrderASC: false)
+    
     
     @AppStorage("localDrawings") var notesData: Data?
     @AppStorage("sortingPreference") var sortingPreferencesData: Data?
@@ -54,7 +59,9 @@ final class HomeViewModel: ObservableObject {
                     print("saved drawing")
                     return
                 }
-                print("No drawing to save")
+                else {
+                    print("No drawing to save (not in SelectedNote)")
+                }
             }
         } catch {
 
@@ -85,7 +92,9 @@ final class HomeViewModel: ObservableObject {
                     print("saved drawing")
                     return
                 }
-                print("No drawing to save")
+                else {
+                    print("No drawing to save (in SelectedNote")
+                }
             }
         }
         catch {
@@ -94,7 +103,12 @@ final class HomeViewModel: ObservableObject {
     }
     
     func duplicateNote(_ selectedNote: Note) {
-        let newNote = Note(title: selectedNote.title + "-copy", date: Date(), language: selectedNote.language, drawing: selectedNote.drawing)
+        let newNote = Note(
+            title: selectedNote.title + "-copy",
+            date: Date(),
+            language: selectedNote.language,
+            drawing: selectedNote.drawing
+        )
         addNote(newNote)
     }
     
@@ -115,7 +129,7 @@ final class HomeViewModel: ObservableObject {
             return false
         }
         
-        selectedNote.title = newTitle
+        self.selectedNote.title = newTitle
         saveNote(selectedNote)
         loadNotes()
         return true
@@ -159,4 +173,106 @@ final class HomeViewModel: ObservableObject {
         }
     }
     
+    func getOCRTask() {
+        Task {
+            do {
+                let res = try await NetworkManager.shared.getOCRTask(
+                    task_id: "kjanskdja"
+                )
+                print("res\n", res)
+            } catch {
+
+            }
+        }
+    }
+
+    func getStreamedOCRTask(task_id: String) {
+        Task {
+            do {
+                try await NetworkManager.shared.getStreamedOCRTask(
+                    task_id: task_id
+                ) { event in
+                    
+                    print(event)
+                    if let error = event.result?.error {
+                        print("ERROR:", error)
+                        return
+                    }
+                    
+                    if event.status == "completed" && event.result != nil {
+                        print("FINAL EVENT:", event.result!)
+                        Task {
+                            self.selectedNote.scannedCode = (event.result?.result!)!
+                            self.editorIsPresented = true
+                            self.isLoading = false
+                            self.saveNotes()
+                        }
+                    }
+                }
+            } catch {
+                print("STREAM ERROR:", error)
+            }
+        }
+    }
+
+    func postOCRTask(currentNote: Note) {
+        Task {
+            do {
+                let res = try await NetworkManager.shared.postOCRImage(
+                    language: currentNote.language.rawValue.lowercased(),
+                    title: currentNote.title,
+                    drawing: currentNote.drawing.toUIImage()
+                )
+                
+                print("This is the response", res)
+                currentNote.hasBeenScanned = true
+                isLoading = true
+
+                if res.status != "processing" {
+                    print("error with server since status is not processing")
+                    throw URLError(.badServerResponse)
+                }
+
+                currentNote.mostRecentOCRTaskId = res.task_id!
+
+                getStreamedOCRTask(task_id: currentNote.mostRecentOCRTaskId)
+
+            } catch {
+                print(error.localizedDescription)
+            }
+            
+        }
+    }
+    
+    func postExecuteTask(currentNote: Note) {
+        Task {
+            do {
+                let resData = try await NetworkManager.shared.postExecuteCode(
+                    code: currentNote.scannedCode,
+                    language: currentNote.language.rawValue.lowercased()
+                )
+                currentNote.mostRecentExeTaskId = resData.task_id
+                getStreamedExecuteTask(task_id: currentNote.mostRecentExeTaskId)
+            } catch {
+
+            }
+        }
+    }
+
+    func getStreamedExecuteTask(task_id: String) {
+        Task {
+            try await NetworkManager.shared.getStreamedExecuteTask(
+                task_id: task_id
+            ) { event in
+                if event.status == "success" {
+                    Task {
+                        print("Event", event)
+                        self.selectedNote.codeResult = event.result
+                        self.codePopupIsPresented = true
+                        self.saveNotes()
+                    }
+                }
+            }
+        }
+    }
 }
